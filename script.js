@@ -1,5 +1,15 @@
+const fileInput = document.getElementById("fileInput");
+const fileName = document.getElementById("fileName");
+
+fileInput.addEventListener("change", () => {
+  if (fileInput.files.length > 0) {
+    fileName.textContent = fileInput.files[0].name;
+  } else {
+    fileName.textContent = "No file chosen";
+  }
+});
+
 async function uploadFile() {
-  const fileInput = document.getElementById('fileInput');
   const buffer = document.getElementById('buffer');
   const result = document.getElementById('result');
   const resultText = document.getElementById('resultText');
@@ -16,7 +26,6 @@ async function uploadFile() {
     return;
   }
 
-  // Hide result and show buffer screen
   result.classList.add("hidden");
   buffer.classList.remove("hidden");
 
@@ -30,16 +39,15 @@ async function uploadFile() {
     });
 
     if (!response.ok) {
-      throw new Error("Server returned error");
+      throw new Error("Server returned an error");
     }
 
     const data = await response.json();
-
     buffer.classList.add("hidden");
     resultText.textContent = JSON.stringify(data, null, 2);
     result.classList.remove("hidden");
   } catch (err) {
     buffer.classList.add("hidden");
-    alert("Error analyzing document. Please check the backend and try again.");
+    alert("Error analyzing document. Check backend or try again.");
   }
 }

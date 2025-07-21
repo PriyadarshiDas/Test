@@ -13,7 +13,14 @@
     </div>
 
     <div class="upload-box glass">
-      <input type="file" id="fileInput" accept=".pdf,.docx" />
+      <div class="custom-file-upload">
+        <label for="fileInput">
+          <span>📂 Upload Document</span>
+        </label>
+        <input type="file" id="fileInput" accept=".pdf,.docx" />
+        <div id="fileName">No file chosen</div>
+      </div>
+
       <button class="neon-button" onclick="uploadFile()">Analyze</button>
       <p class="note">Only PDF or DOCX files are supported</p>
     </div>

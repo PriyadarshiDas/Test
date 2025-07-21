@@ -38,10 +38,49 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.upload-box input[type="file"] {
-  margin-bottom: 15px;
-  color: white;
+.custom-file-upload {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px dashed #0ff;
+  border-radius: 15px;
+  padding: 25px;
+  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.custom-file-upload label {
+  display: inline-block;
+  color: #0ff;
+  padding: 10px 20px;
+  font-weight: bold;
+  border: 2px solid #0ff;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px #0ff;
+  cursor: pointer;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.custom-file-upload label:hover {
+  background-color: #0ff;
+  color: black;
+  box-shadow: 0 0 20px #00ffff, 0 0 40px #00ffff;
+}
+
+.custom-file-upload input[type="file"] {
+  display: none;
+}
+
+#fileName {
+  color: #ccc;
   font-size: 0.9rem;
+  font-style: italic;
 }
 
 .neon-button {
