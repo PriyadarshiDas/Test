@@ -1,24 +1,24 @@
-import chromadb
-from chromadb.utils import embedding_functions
+import streamlit as st
+import requests
+import yaml
+from utils.uploader import validate_and_extract_files
 
-# Set up ChromaDB client and default embedder
-client = chromadb.Client()
-embed_fn = embedding_functions.DefaultEmbeddingFunction()
+# Load dropdown config
+with open("configs/frontend_config.yaml", "r") as f:
+    config = yaml.safe_load(f)
 
-# Create collection
-collection = client.create_collection("test_docs", embedding_function=embed_fn)
+st.title("GenAI Document Processor")
 
-# Add documents
-docs = [
-    "User withdrew ₹500 from ATM",
-    "Customer deposited ₹1000",
-    "Tiger in the jungle"
-]
-collection.add(documents=docs, ids=["1", "2", "3"])
+# Dropdown
+option = st.selectbox("Select Action", [opt["name"] for opt in config["dropdown_options"]])
 
-# Query
-results = collection.query(query_texts=["ATM withdrawal"], n_results=2)
+# File uploader
+uploaded_file = st.file_uploader("Upload ZIP or Single PDF/DOCX", type=["zip", "pdf", "docx"])
 
-# Output
-for i, doc in enumerate(results["documents"][0]):
-    print(f"{i+1}. {doc}")
+if uploaded_file:
+    files = validate_and_extract_files(uploaded_file)
+    if st.button("Submit"):
+        with st.spinner("Processing..."):
+            res = requests.post("http://localhost:8000/process", files=files, data={"action": option})
+            st.success("Done")
+            st.json(res.json())
