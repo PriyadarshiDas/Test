@@ -1,0 +1,7 @@
+dropdown_options:
+  - name: Analyze Policy
+    prompt_file: analyze_policy.yaml
+  - name: Classify Document
+    prompt_file: classify_doc.yaml
+  - name: Summarize
+    prompt_file: summarize.yaml
