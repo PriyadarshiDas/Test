@@ -1,33 +1,51 @@
-import fitz  # PyMuPDF
-import pytesseract
-from PIL import Image
-from io import BytesIO
-from zipfile import ZipFile
-from xml.etree import ElementTree
+# app.py
 
-def extract_images_and_ocr(file_bytes, filename):
-    images_text = ""
+import streamlit as st
+import tempfile
+from pathlib import Path
+from extractor import extract_text_from_file
+from main import process_document  # Assuming your backend logic is here
 
-    if filename.endswith(".pdf"):
-        pdf = fitz.open(stream=file_bytes, filetype="pdf")
-        for page in pdf:
-            for img in page.get_images(full=True):
-                base_image = pdf.extract_image(img[0])
-                img_bytes = base_image["image"]
-                img_pil = Image.open(BytesIO(img_bytes))
-                images_text += pytesseract.image_to_string(img_pil)
+st.set_page_config(page_title="📄 Document Text Extractor", layout="centered")
+st.title("📄 Document Text Extractor")
 
-    elif filename.endswith(".docx"):
-        with BytesIO(file_bytes) as f:
-            with ZipFile(f) as docx_zip:
-                image_files = [name for name in docx_zip.namelist() if name.startswith("word/media/")]
-                for image_name in image_files:
-                    image_data = docx_zip.read(image_name)
-                    try:
-                        img_pil = Image.open(BytesIO(image_data))
-                        images_text += pytesseract.image_to_string(img_pil)
-                    except Exception as e:
-                        print(f"Failed to process image {image_name}: {e}")
-                        continue
+# Step 1: Upload
+uploaded_file = st.file_uploader(
+    "Upload a PDF, Word Document (.docx), or ZIP file (containing PDFs and Word docs):",
+    type=["pdf", "docx", "zip"]
+)
 
-    return images_text
+# Step 2: Choose action
+action = st.selectbox("Select Action", ["Extract Text", "Run Analysis", "Summarize"])
+
+if uploaded_file:
+    with tempfile.NamedTemporaryFile(delete=False, suffix=Path(uploaded_file.name).suffix) as tmp:
+        tmp.write(uploaded_file.read())
+        tmp_path = tmp.name
+
+    st.info(f"Processing file: {uploaded_file.name}")
+
+    try:
+        # Extract text from file (or ZIP contents)
+        extracted_data = extract_text_from_file(tmp_path)
+
+        # Preview the text
+        if isinstance(extracted_data, str):
+            st.success("✅ Text extracted successfully")
+            st.text_area("📜 Extracted Text", extracted_data, height=500)
+
+        elif isinstance(extracted_data, dict):
+            st.success("✅ Extracted multiple documents from ZIP")
+
+            file_list = list(extracted_data.keys())
+            selected_file = st.selectbox("Choose a file to preview", file_list)
+            st.text_area("📜 Extracted Text", extracted_data[selected_file], height=500)
+
+        # Step 3: Process the document
+        process_document(tmp_path, action)
+
+        # Step 4: Notify user
+        st.info("✅ Your document is under processing. You'll receive the response via email after analysis.")
+
+    except Exception as e:
+        st.error(f"❌ Error: {e}")
