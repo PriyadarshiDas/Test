@@ -1,55 +1,45 @@
-# extractor.py
+import re
+import unicodedata
 
-import os
-import zipfile
-from pathlib import Path
-from typing import Union, Dict
-import fitz  # PyMuPDF
-from docx import Document
-import tempfile
-
-def extract_text_from_pdf(file_path: Union[str, Path]) -> str:
-    text = ""
-    with fitz.open(file_path) as doc:
-        for page in doc:
-            text += page.get_text()
+def normalize_text(text: str) -> str:
+    # Unicode normalization to fix weird characters
+    text = unicodedata.normalize("NFKC", text)
+    
+    # Replace non-breaking spaces and tabs with regular space
+    text = text.replace('\xa0', ' ')
+    text = text.replace('\t', ' ')
+    
+    # Normalize smart quotes and dashes
+    text = text.replace('“', '"').replace('”', '"')
+    text = text.replace('’', "'")
+    text = text.replace('–', '-')  # en dash
+    text = text.replace('—', '-')  # em dash
+    
+    # Remove trailing spaces on each line (but keep line breaks)
+    text = re.sub(r'[ \t]+$', '', text, flags=re.MULTILINE)
+    
+    # Normalize multiple spaces (but preserve single line breaks)
+    text = re.sub(r'[ \t]{2,}', ' ', text)
+    
+    # Remove redundant empty lines (keep single blank line for paragraphs)
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    
+    # Strip leading/trailing whitespace
+    text = text.strip()
+    
     return text
 
-def extract_text_from_docx(file_path: Union[str, Path]) -> str:
-    doc = Document(file_path)
-    return "\n".join([para.text for para in doc.paragraphs])
+# === File Paths ===
+input_file_path = "raw_input.txt"          # Replace with your input file name
+output_file_path = "normalized_output.txt" # Replace with your desired output name
 
-def extract_text_from_file(file_path: Union[str, Path]) -> Union[str, Dict[str, str]]:
-    path = Path(file_path)
+# === Read, Normalize, Write ===
+with open(input_file_path, 'r', encoding='utf-8') as infile:
+    raw_text = infile.read()
 
-    if not path.exists():
-        raise FileNotFoundError(f"{file_path} not found")
+cleaned_text = normalize_text(raw_text)
 
-    if path.suffix.lower() == ".pdf":
-        return extract_text_from_pdf(path)
+with open(output_file_path, 'w', encoding='utf-8') as outfile:
+    outfile.write(cleaned_text)
 
-    elif path.suffix.lower() == ".docx":
-        return extract_text_from_docx(path)
-
-    elif path.suffix.lower() == ".zip":
-        return extract_text_from_zip(path)
-
-    else:
-        raise ValueError(f"Unsupported file type: {path.suffix}")
-
-def extract_text_from_zip(zip_path: Union[str, Path]) -> Dict[str, str]:
-    file_texts = {}
-    with tempfile.TemporaryDirectory() as temp_dir:
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(temp_dir)
-
-        for root, _, files in os.walk(temp_dir):
-            for file in files:
-                file_path = Path(root) / file
-                try:
-                    if file_path.suffix.lower() in [".pdf", ".docx"]:
-                        text = extract_text_from_file(file_path)
-                        file_texts[file] = text
-                except Exception as e:
-                    print(f"Failed to extract {file}: {e}")
-    return file_texts
+print(f"✅ Normalized text saved to: {output_file_path}")
